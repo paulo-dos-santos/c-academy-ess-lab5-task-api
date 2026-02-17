@@ -26,7 +26,13 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-
+          
+      # Criar .env dummy porque não temos no repositório
+      - name: Create dummy .env file
+        run: |
+          echo "JWT_SECRET=segredo_super_secreto_para_testes" >> .env
+          echo "PORT=7100" >> .env
+          
       # Run unit tests
       - name: Build e testes (JUnit)
         run: mvn clean test
