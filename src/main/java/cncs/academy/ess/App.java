@@ -4,9 +4,17 @@ import cncs.academy.ess.controller.AuthorizationMiddleware;
 import cncs.academy.ess.controller.TodoController;
 import cncs.academy.ess.controller.TodoListController;
 import cncs.academy.ess.controller.UserController;
+
+/*
 import cncs.academy.ess.repository.sql.SQLTodoRepository;
 import cncs.academy.ess.repository.sql.SQLTodoListsRepository;
 import cncs.academy.ess.repository.sql.SQLUserRepository;
+*/
+
+import cncs.academy.ess.repository.memory.InMemoryTodoRepository;
+import cncs.academy.ess.repository.memory.InMemoryTodoListsRepository;
+import cncs.academy.ess.repository.memory.InMemoryUserRepository;
+
 import cncs.academy.ess.service.TodoListsService;
 import cncs.academy.ess.service.TodoUserService;
 import cncs.academy.ess.service.TodoService;
@@ -14,7 +22,7 @@ import io.javalin.Javalin;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.security.NoSuchAlgorithmException;
-import io.javalin.community.ssl.SslPlugin;
+//import io.javalin.community.ssl.SslPlugin;
 
 public class App {
     public static void main(String[] args) throws NoSuchAlgorithmException {
@@ -25,31 +33,36 @@ public class App {
                 });
             });
 
-            config.registerPlugin(new SslPlugin(ssl -> {
+            /*config.registerPlugin(new SslPlugin(ssl -> {
                 ssl.pemFromPath("ssl/cert.pem", "ssl/key.pem");
                 ssl.insecurePort = 7080; // Porta HTTP normal
                 ssl.securePort = 7100;   // Porta HTTPS (Encriptada)
                 ssl.sniHostCheck = false; // desabilitar para correr localhost.. commentar em produção...
-            }));
+            }));*/
 
-        }).start();
+        }); //.start();
 
         // Initialize routes for user management
-        //InMemoryUserRepository userRepository = new InMemoryUserRepository();
+
+        /*
         BasicDataSource ds = new BasicDataSource();
         ds.setDriverClassName("org.postgresql.Driver");
         String connectURI = String.format("jdbc:postgresql://%s:%s/%s?user=%s&password=%s", "localhost", "5430", "postgres", "postgres", "changeit2");
         ds.setUrl(connectURI);
+        */
 
-        SQLUserRepository userRepository = new SQLUserRepository(ds);
+        //SQLUserRepository userRepository = new SQLUserRepository(ds);
+        InMemoryUserRepository userRepository = new InMemoryUserRepository();
         TodoUserService userService = new TodoUserService(userRepository);
         UserController userController = new UserController(userService);
 
-        SQLTodoListsRepository listsRepository = new SQLTodoListsRepository(ds);
+        //SQLTodoListsRepository listsRepository = new SQLTodoListsRepository(ds);
+        InMemoryTodoListsRepository listsRepository = new InMemoryTodoListsRepository();
         TodoListsService toDoListService = new TodoListsService(listsRepository);
         TodoListController todoListController = new TodoListController(toDoListService);
 
-        SQLTodoRepository todoRepository = new SQLTodoRepository(ds);
+        //SQLTodoRepository todoRepository = new SQLTodoRepository(ds);
+        InMemoryTodoRepository todoRepository = new InMemoryTodoRepository();
         TodoService todoService = new TodoService(todoRepository, listsRepository);
         TodoController todoController = new TodoController(todoService, toDoListService);
 
@@ -96,6 +109,8 @@ public class App {
         app.delete("/todo/{listId}/tasks/{taskId}", todoController::deleteTodoItem);
 
         //fillDummyData(userService, toDoListService, todoService);
+        int port = System.getenv("PORT") != null ? Integer.parseInt(System.getenv("PORT")) : 7100;
+        app.start(port);
     }
 
     private static void fillDummyData(
